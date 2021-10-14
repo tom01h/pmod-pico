@@ -79,6 +79,6 @@ int main()
   multicore_launch_core1(core1_entry);
   while (1) {
     from_host_task();
-    to_host_task();//for unicore implementation
+    to_host_task();
   }
 }
