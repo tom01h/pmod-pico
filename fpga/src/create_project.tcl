@@ -23,15 +23,15 @@
 # 2. The following source(s) files that were local or imported into the original project.
 #    (Please see the '$orig_proj_dir' and '$origin_dir' variable setting below at the start of the script)
 #
-#    "/home/tom01h/work/ras-pico/fpga/project_1/project_1.srcs/sources_1/bd/design_1/design_1.bd"
-#    "/home/tom01h/work/ras-pico/fpga/project_1/project_1.srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v"
+#    "/home/tom01h/work/pmod-pico/fpga/project_1/project_1.srcs/sources_1/bd/design_1/design_1.bd"
+#    "/home/tom01h/work/pmod-pico/fpga/project_1/project_1.srcs/sources_1/bd/design_1/hdl/design_1_wrapper.v"
 #
 # 3. The following remote source files that were added to the original project:-
 #
-#    "/home/tom01h/work/ras-pico/fpga/busIf.sv"
-#    "/home/tom01h/work/ras-pico/fpga/pmodCmd.sv"
-#    "/home/tom01h/work/ras-pico/fpga/pmodIf.v"
-#    "/home/tom01h/work/ras-pico/fpga/Arty-Master.xdc"
+#    "/home/tom01h/work/pmod-pico/fpga/busIf.sv"
+#    "/home/tom01h/work/pmod-pico/fpga/pmodCmd.sv"
+#    "/home/tom01h/work/pmod-pico/fpga/pmodIf.v"
+#    "/home/tom01h/work/pmod-pico/fpga/Arty-Master.xdc"
 #
 #*****************************************************************************************
 
