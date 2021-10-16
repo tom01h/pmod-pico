@@ -1,6 +1,6 @@
 module budIf (
-    input logic           M_AXI_ACLK,
-    input logic           M_AXI_ARESETN,
+    input  logic          M_AXI_ACLK,
+    input  logic          M_AXI_ARESETN,
 
     output logic [31 : 0] M_AXI_AWADDR,
     output logic [7 : 0]  M_AXI_AWLEN,
@@ -8,15 +8,15 @@ module budIf (
     output logic [1 : 0]  M_AXI_AWBURST,
     output logic [2 : 0]  M_AXI_AWPROT,
     output logic          M_AXI_AWVALID,
-    input logic           M_AXI_AWREADY,
+    input  logic          M_AXI_AWREADY,
 
     output logic [63 : 0] M_AXI_WDATA,
     output logic [7 : 0]  M_AXI_WSTRB,
     output logic          M_AXI_WLAST,
     output logic          M_AXI_WVALID,
-    input logic           M_AXI_WREADY,
+    input  logic          M_AXI_WREADY,
 
-    input logic           M_AXI_BVALID,
+    input  logic          M_AXI_BVALID,
     output logic          M_AXI_BREADY,
 
     output logic [31 : 0] M_AXI_ARADDR,
@@ -25,20 +25,20 @@ module budIf (
     output logic [1 : 0]  M_AXI_ARBURST,
     output logic [2 : 0]  M_AXI_ARPROT,
     output logic          M_AXI_ARVALID,
-    input logic           M_AXI_ARREADY,
+    input  logic          M_AXI_ARREADY,
 
-    input logic [63 : 0]  M_AXI_RDATA,
-    input logic           M_AXI_RLAST,
-    input logic           M_AXI_RVALID,
+    input  logic [63 : 0] M_AXI_RDATA,
+    input  logic          M_AXI_RLAST,
+    input  logic          M_AXI_RVALID,
     output logic          M_AXI_RREADY,
 
-    input logic           write_req,
-    input logic           read_req,
+    input  logic          write_req,
+    input  logic          read_req,
     output logic          busy,
 
-    input logic [9 : 0]   len, // 1:1, 2:2, 4:4, 6:8, 8n:8(n+1)
-    input logic [31 : 0]  address,
-    input logic [63 : 0]  wdata
+    input  logic [9 : 0]  len, // 1:1, 2:2, 4:4, 6:8, 8n:8(n+1)
+    input  logic [31 : 0] address,
+    input  logic [63 : 0] wdata
 );
 
     assign M_AXI_AWBURST = 2'b01;
@@ -72,18 +72,18 @@ module budIf (
             M_AXI_WVALID  <= 1'b1;
             M_AXI_WDATA   <= wdata;
             casez(len[2:0])
-            3'b001: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b000; M_AXI_WLAST <= 1'b1; end
-            3'b010: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b001; M_AXI_WLAST <= 1'b1; end
-            3'b100: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b010; M_AXI_WLAST <= 1'b1; end
-            3'b11?: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b011; M_AXI_WLAST <= 1'b1; end
-            3'b000: begin M_AXI_AWLEN <= len[9:3]; M_AXI_AWSIZE <= 3'b011; M_AXI_WLAST <= 1'b0; end
+                3'b001: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b000; M_AXI_WLAST <= 1'b1; end
+                3'b010: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b001; M_AXI_WLAST <= 1'b1; end
+                3'b100: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b010; M_AXI_WLAST <= 1'b1; end
+                3'b11?: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b011; M_AXI_WLAST <= 1'b1; end
+                3'b000: begin M_AXI_AWLEN <= len[9:3]; M_AXI_AWSIZE <= 3'b011; M_AXI_WLAST <= 1'b0; end
             endcase
             wcnt <= len[9:3];
             casez(len[2:0])
-            3'b001:  M_AXI_WSTRB <= (1'b1    << address[2:0]);
-            3'b010:  M_AXI_WSTRB <= (2'b11   << address[2:0]);
-            3'b100:  M_AXI_WSTRB <= (4'b1111 << address[2:0]);
-            default: M_AXI_WSTRB <= 8'hff;
+                3'b001:  M_AXI_WSTRB <= (1'b1    << address[2:0]);
+                3'b010:  M_AXI_WSTRB <= (2'b11   << address[2:0]);
+                3'b100:  M_AXI_WSTRB <= (4'b1111 << address[2:0]);
+                default: M_AXI_WSTRB <= 8'hff;
             endcase
         end else begin
             if(M_AXI_ARVALID & M_AXI_ARREADY) M_AXI_ARVALID <= 1'b0;

@@ -46,6 +46,7 @@ void device_close()
 int main() {
   unsigned char    send_data[64] = {0};
   unsigned char receive_data[64] = {0};
+  unsigned char     send_str[64] = {0};
   int data_len;
 
   // Init
@@ -55,30 +56,32 @@ int main() {
 
   int r;
   int dummy = 0;
-  strcpy((char*)send_data, "hello, world\n");
-  data_len = strlen((char*)send_data) + 1;
-  r = libusb_bulk_transfer(dev_handle, PMODUSB_WRITE_EP, send_data, data_len, &dummy, 1000);
-  if ( r != 0 ){
-    device_close();
-    return -1;
-  }
-
-  printf("Send : %d Bytes\n", dummy);
-  for ( int i = 0; i < dummy; i++ )
-    printf("%02X ", send_data[i]);
-  printf("\n");
-
-  r = libusb_bulk_transfer(dev_handle, PMODUSB_READ_EP, receive_data, sizeof(receive_data), &data_len, 1000);
-  if ( r != 0 ){
-    device_close();
-    return -1;
-  }
+  strcpy((char*)send_str, "hello, world\r\n");
+  data_len = strlen((char*)send_str) + 1;
+  for(int i = 0; i < data_len; i++){
+    int waddress = 0x40600004;
   
-  printf("Received : %d Bytes\n", data_len);
-  for ( int i = 0; i < data_len; i++ )
-    printf("%02X ", receive_data[i]);
-  printf("\n");
-  printf("%s", receive_data);
+    send_data[0] = 1;
+    send_data[1] = 4;
+    send_data[2] = 0;
+    send_data[4] = (waddress >>  0) & 0xff;
+    send_data[5] = (waddress >>  8) & 0xff;
+    send_data[6] = (waddress >> 16) & 0xff;
+    send_data[7] = (waddress >> 24) & 0xff;
+    send_data[8] = send_str[i];
+    send_data[9] = 0;
+    send_data[10] = 0;
+    send_data[11] = 0;
+    r = libusb_bulk_transfer(dev_handle, PMODUSB_WRITE_EP, send_data, 12, &dummy, 1000);
+    if ( r != 0 ){
+      device_close();
+      return -1;
+    }
+    printf("Send : %d Bytes\n", dummy);
+    for ( int i = 0; i < dummy; i++ )
+      printf("%02X ", send_data[i]);
+    printf("\n");
+  }
 
   device_close();
   return 0;

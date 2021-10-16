@@ -34,8 +34,6 @@ module tb ();
     logic          M_AXI_RVALID;
     logic          M_AXI_RREADY;
 
-    logic          button;
-
     always begin
         M_AXI_ACLK=1;#5;
         M_AXI_ACLK=0;#5;
@@ -51,38 +49,87 @@ module tb ();
     always begin
         M_AXI_AWREADY = 1'b1;
         repeat(3)@(posedge M_AXI_ACLK);
-        M_AXI_AWREADY = 1'b0;
+        //M_AXI_AWREADY = 1'b0;
         repeat(1)@(posedge M_AXI_ACLK);
     end
     always begin
         M_AXI_WREADY = 1'b1;
         repeat(5)@(posedge M_AXI_ACLK);
-        M_AXI_WREADY = 1'b0;
+        //M_AXI_WREADY = 1'b0;
         repeat(1)@(posedge M_AXI_ACLK);
     end
 
     initial begin
         M_AXI_ARESETN = 1'b0;
-        button        = 1'b0;
         repeat(3)@(posedge M_AXI_ACLK);
         M_AXI_ARESETN = 1'b1;
         repeat(3)@(posedge M_AXI_ACLK);
-        button        = 1'b1;
-        repeat(3)@(posedge M_AXI_ACLK);
-        button        = 1'b0;
-        repeat(20)@(posedge M_AXI_ACLK);
-        button        = 1'b1;
-        repeat(3)@(posedge M_AXI_ACLK);
-        button        = 1'b0;
+
     end
     
-    integer cnt_a, cnt_d;
+    logic          pck;
+    logic          pwrite;
+    logic [1:0]    pwd;
+    logic [1:0]    prd;
+    logic          pwait;
+    logic          pmod_enable = 1'b0;
+    integer        i,j;
+    logic [9:0]    len = 'd4;
+    logic [31:0]   waddress = 32'h4060_0004;
+    logic [7:0]    wdata;
+    always begin
+        pck = pmod_enable;
+        #27;
+        pck = 1'b0;
+        #27;
+    end
+    initial begin
+        pmod_enable = 1'b0;
+        pwrite      = 1'b0;
+        pwd         = 2'b00;
+        repeat(10)@(posedge M_AXI_ACLK);
+        pmod_enable = 1'b1;
+        pwrite = 1'b1;
+        for(i=0; i<14; i++) begin
+            casez(i)
+                'd0:  wdata = 8'h68;
+                'd1:  wdata = 8'h65;
+                'd2:  wdata = 8'h6C;
+                'd3:  wdata = 8'h6C;
+                'd4:  wdata = 8'h6F;
+                'd5:  wdata = 8'h2C;
+                'd6:  wdata = 8'h20;
+                'd7:  wdata = 8'h77;
+                'd8:  wdata = 8'h6F;
+                'd9:  wdata = 8'h72;
+                'd10: wdata = 8'h6C;
+                'd11: wdata = 8'h64;
+                'd12: wdata = 8'h0D;
+                'd13: wdata = 8'h0A;
+            endcase
+            for(j=0; j<5; j++) begin
+                @(posedge pck);
+                pwd = len[2*j +: 2];
+            end
+            for(j=0; j<16; j++) begin
+                @(posedge pck);
+                pwd = waddress[2*j +: 2];
+            end
+            for(j=0; j<4; j++) begin
+                @(posedge pck);
+                pwd = wdata[2*j +: 2];
+            end
+            for(j=0; j<12; j++) begin
+                @(posedge pck);
+                pwd = 0;
+            end
+        end
+        pmod_enable = 1'b0;
+
+        repeat(100)@(posedge M_AXI_ACLK);
+        $finish;
+    end
     
-    always_ff @(posedge M_AXI_ACLK) begin
-        if(~M_AXI_ARESETN) begin cnt_a = 0; cnt_d = 0; end
-        if(M_AXI_AWREADY & M_AXI_AWVALID) cnt_a = cnt_a + 1;
-        if(M_AXI_WREADY  & M_AXI_WVALID)  cnt_d = cnt_d + 1;
-    end    
     pmodIf pmodIf (
         .M_AXI_ACLK(M_AXI_ACLK),
         .M_AXI_ARESETN(M_AXI_ARESETN),
@@ -117,7 +164,11 @@ module tb ();
         .M_AXI_RVALID(M_AXI_RVALID),
         .M_AXI_RREADY(M_AXI_RREADY),
         
-        .button(button)
+        .pck(pck),
+        .pwrite(pwrite),
+        .pwd(pwd),
+        .prd(prd),
+        .pwait(pwait)
     );
 
 endmodule

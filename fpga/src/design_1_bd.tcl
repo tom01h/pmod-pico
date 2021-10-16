@@ -226,7 +226,11 @@ proc create_root_design { parentCell } {
 
 
   # Create ports
-  set btn [ create_bd_port -dir I btn ]
+  set PCK [ create_bd_port -dir I PCK ]
+  set PRD [ create_bd_port -dir O -from 1 -to 0 PRD ]
+  set PWAIT [ create_bd_port -dir O PWAIT ]
+  set PWD [ create_bd_port -dir I -from 1 -to 0 PWD ]
+  set PWRITE [ create_bd_port -dir I PWRITE ]
   set reset [ create_bd_port -dir I -type rst reset ]
   set_property -dict [ list \
    CONFIG.POLARITY {ACTIVE_LOW} \
@@ -284,9 +288,13 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net pmodIf_0_axi_periph_M00_AXI [get_bd_intf_pins axi_uartlite_0/S_AXI] [get_bd_intf_pins pmodIf_0_axi_periph/M00_AXI]
 
   # Create port connections
-  connect_bd_net -net btn_1 [get_bd_ports btn] [get_bd_pins pmodIf_0/button]
+  connect_bd_net -net PCK_1 [get_bd_ports PCK] [get_bd_pins pmodIf_0/pck]
+  connect_bd_net -net PWD_1 [get_bd_ports PWD] [get_bd_pins pmodIf_0/pwd]
+  connect_bd_net -net PWRITE_1 [get_bd_ports PWRITE] [get_bd_pins pmodIf_0/pwrite]
   connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins axi_uartlite_0/s_axi_aclk] [get_bd_pins clk_wiz/clk_out1] [get_bd_pins pmodIf_0/M_AXI_ACLK] [get_bd_pins pmodIf_0_axi_periph/ACLK] [get_bd_pins pmodIf_0_axi_periph/M00_ACLK] [get_bd_pins pmodIf_0_axi_periph/S00_ACLK] [get_bd_pins rst_clk_wiz_100M/slowest_sync_clk]
   connect_bd_net -net clk_wiz_locked [get_bd_pins clk_wiz/locked] [get_bd_pins rst_clk_wiz_100M/dcm_locked]
+  connect_bd_net -net pmodIf_0_prd [get_bd_ports PRD] [get_bd_pins pmodIf_0/prd]
+  connect_bd_net -net pmodIf_0_pwait [get_bd_ports PWAIT] [get_bd_pins pmodIf_0/pwait]
   connect_bd_net -net reset_1 [get_bd_ports reset] [get_bd_pins clk_wiz/resetn] [get_bd_pins rst_clk_wiz_100M/ext_reset_in]
   connect_bd_net -net rst_clk_wiz_100M_peripheral_aresetn [get_bd_pins axi_uartlite_0/s_axi_aresetn] [get_bd_pins pmodIf_0/M_AXI_ARESETN] [get_bd_pins pmodIf_0_axi_periph/ARESETN] [get_bd_pins pmodIf_0_axi_periph/M00_ARESETN] [get_bd_pins pmodIf_0_axi_periph/S00_ARESETN] [get_bd_pins rst_clk_wiz_100M/peripheral_aresetn]
   connect_bd_net -net sys_clock_1 [get_bd_ports sys_clock] [get_bd_pins clk_wiz/clk_in1]
