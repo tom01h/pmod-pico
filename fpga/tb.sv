@@ -42,10 +42,6 @@ module tb ();
     assign M_AXI_BVALID  = 1'b0;
     assign M_AXI_ARREADY = 1'b1;
 
-    assign M_AXI_RDATA   = 64'h0;
-    assign M_AXI_RLAST   = 1'b0;
-    assign M_AXI_RVALID  = 1'b0;
-
     always begin
         M_AXI_AWREADY = 1'b1;
         repeat(3)@(posedge M_AXI_ACLK);
@@ -77,6 +73,7 @@ module tb ();
     logic [9:0]    len = 'd4;
     logic [31:0]   waddress = 32'h4060_0004;
     logic [7:0]    wdata;
+    logic [31:0]   raddress = 32'h4000_0000;
     always begin
         pck = pmod_enable;
         #27;
@@ -87,9 +84,33 @@ module tb ();
         pmod_enable = 1'b0;
         pwrite      = 1'b0;
         pwd         = 2'b00;
+        M_AXI_RVALID  = 1'b0;
+        M_AXI_RLAST   = 1'b0;
         repeat(10)@(posedge M_AXI_ACLK);
         pmod_enable = 1'b1;
-        pwrite = 1'b1;
+        pwrite = 1'b0;
+        for(j=0; j<5; j++) begin
+            @(posedge pck);
+            pwd = len[2*j +: 2];
+        end
+        for(j=0; j<16; j++) begin
+            @(posedge pck);
+            pwd = raddress[2*j +: 2];
+        end
+
+        wait(M_AXI_ARVALID);
+        repeat(2) @(posedge M_AXI_ACLK);
+        M_AXI_RVALID  = 1'b1;
+        M_AXI_RLAST   = 1'b1;
+        M_AXI_RDATA   = 32'hdeadbeef;
+        @(posedge M_AXI_ACLK);
+        M_AXI_RVALID  = 1'b0;
+        M_AXI_RLAST   = 1'b0;
+
+
+        wait(~pwait);
+        repeat(16) @(posedge pck);
+        /*pwrite = 1'b1;
         for(i=0; i<14; i++) begin
             casez(i)
                 'd0:  wdata = 8'h68;
@@ -123,7 +144,7 @@ module tb ();
                 @(posedge pck);
                 pwd = 0;
             end
-        end
+        end*/
         pmod_enable = 1'b0;
 
         repeat(100)@(posedge M_AXI_ACLK);

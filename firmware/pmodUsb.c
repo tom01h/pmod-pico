@@ -62,11 +62,11 @@ void __time_critical_func(from_host_task)()
 
 }
 
-void __time_critical_func(plen)(int c)
+void __time_critical_func(plen)(int c, bool w)
 {
   for(int j=0; j < 5; j++)
   {
-    uint32_t val = (1 << PCK_PIN) | (1 << PWRITE_PIN) | ((c&3) << PWD0_PIN);
+    uint32_t val = (1 << PCK_PIN) | (w << PWRITE_PIN) | ((c&3) << PWD0_PIN);
     gpio_put_masked(msk, val);
     for (unsigned int l = 0; l < 5; l++)
       asm volatile("nop");
@@ -75,14 +75,39 @@ void __time_critical_func(plen)(int c)
   }
 }
 
-void __time_critical_func(pwrite)(uint8_t *buffer, int size)
+void __time_critical_func(pread)(uint8_t *buffer, int size)
 {
   for(int i=0; i < size; i++)
   {
-    char c = buffer[i];
+    uint8_t c = 0;
+    uint32_t ci;
+    for(int j=0; j < 4; )
+    {
+      uint32_t val = (1 << PCK_PIN);
+      gpio_put_masked(msk, val);
+      c >>= 2;
+      j++;
+      ci = gpio_get_all();
+      if(!(ci & (1 << PWAIT_PIN))){
+        c |= (ci >> (PRD1_PIN - 7)) & 0xc0;
+      } else {
+        c <<= 2;
+        j--;
+      }
+      gpio_put_masked(msk, 0);
+    }
+    buffer[i] = c;
+  }
+}
+
+void __time_critical_func(pwrite)(uint8_t *buffer, int size, bool w)
+{
+  for(int i=0; i < size; i++)
+  {
+    uint8_t c = buffer[i];
     for(int j=0; j < 4; j++)
     {
-      uint32_t val = (1 << PCK_PIN) | (1 << PWRITE_PIN) | ((c&3) << PWD0_PIN);
+      uint32_t val = (1 << PCK_PIN) | (w << PWRITE_PIN) | ((c&3) << PWD0_PIN);
       gpio_put_masked(msk, val);
       for (unsigned int l = 0; l < 5; l++)
         asm volatile("nop");
@@ -106,12 +131,18 @@ void __time_critical_func(pmod_task)()
       case 7:  size = 8; break;
       default: size = len + 8; break;
     }
-    if(buffer_infos.buffer[0]){
-      plen(len);                             // LEN
-      pwrite(&buffer_infos.buffer[4], 4);    // ADDRESS
-      pwrite(&buffer_infos.buffer[8], size); // DATA
+    if(buffer_infos.buffer[0]){  // WRITE
+      plen(len, 1);                             // LEN
+      pwrite(&buffer_infos.buffer[4], 4, 1);    // ADDRESS
+      pwrite(&buffer_infos.buffer[8], size, 1); // DATA
+      buffer_infos.busy = false;
+    }else{                       // READ
+      plen(len, 0);                             // LEN
+      pwrite(&buffer_infos.buffer[4], 4, 0);    // ADDRESS
+      pread(&buffer_infos.buffer[0], size);     // DATA
+      buffer_infos.count = size;
+      buffer_infos.busy = true;
     }
-    buffer_infos.busy = false;
   }
 }
 

@@ -38,7 +38,9 @@ module budIf (
 
     input  logic [9 : 0]  len, // 1:1, 2:2, 4:4, 6:8, 8n:8(n+1)
     input  logic [31 : 0] address,
-    input  logic [63 : 0] wdata
+    input  logic [63 : 0] wdata,
+    output logic [63 : 0] rdata,
+    output logic          rlast
 );
 
     assign M_AXI_AWBURST = 2'b01;
@@ -47,12 +49,6 @@ module budIf (
     assign M_AXI_ARPROT  = 3'b000;
 
     assign M_AXI_BREADY  = 1'b1;
-
-    assign M_AXI_ARADDR = 'b0;
-    assign M_AXI_ARLEN = 'b0;
-    assign M_AXI_ARSIZE = 'b0;
-    //assign M_AXI_ARVALID = 1'b0;
-    assign M_AXI_RREADY = 1'b0;
 
     assign busy = M_AXI_WVALID & ~M_AXI_WREADY |
                   ~(M_AXI_WVALID & ~M_AXI_WLAST) & M_AXI_AWVALID & ~M_AXI_AWREADY |
@@ -65,7 +61,18 @@ module budIf (
             M_AXI_ARVALID <= 1'b0;
             M_AXI_AWVALID <= 1'b0;
             M_AXI_WVALID  <= 1'b0;
+            M_AXI_RREADY  <= 1'b0;
         end else if(~busy & read_req) begin
+            M_AXI_ARVALID <= 1'b1;
+            M_AXI_ARADDR  <= address;
+            M_AXI_RREADY  <= 1'b1;
+            casez(len[2:0])
+                3'b001: begin M_AXI_ARLEN <= 8'h00;    M_AXI_ARSIZE <= 3'b000; end
+                3'b010: begin M_AXI_ARLEN <= 8'h00;    M_AXI_ARSIZE <= 3'b001; end
+                3'b100: begin M_AXI_ARLEN <= 8'h00;    M_AXI_ARSIZE <= 3'b010; end
+                3'b11?: begin M_AXI_ARLEN <= 8'h00;    M_AXI_ARSIZE <= 3'b011; end
+                3'b000: begin M_AXI_ARLEN <= len[9:3]; M_AXI_ARSIZE <= 3'b011; end
+            endcase
         end else if(~busy & write_req) begin
             M_AXI_AWVALID <= 1'b1;
             M_AXI_AWADDR  <= address;
@@ -87,6 +94,13 @@ module budIf (
             endcase
         end else begin
             if(M_AXI_ARVALID & M_AXI_ARREADY) M_AXI_ARVALID <= 1'b0;
+            if(M_AXI_RVALID  & M_AXI_RREADY) begin
+                rdata <= M_AXI_RDATA;
+                rlast <= M_AXI_RLAST;
+                M_AXI_RREADY <= ~M_AXI_RLAST;
+            end else begin
+                rlast <= 1'b0;
+            end    
             if(M_AXI_AWVALID & M_AXI_AWREADY) M_AXI_AWVALID <= 1'b0;
             if(M_AXI_WVALID  & M_AXI_WREADY) begin
                 M_AXI_WDATA <= wdata;

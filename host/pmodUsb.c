@@ -55,7 +55,40 @@ int main() {
   }
 
   int r;
-  int dummy = 0;
+  int actual_length = 0;
+  data_len = 1;
+  for(int i = 0; i < data_len; i++){
+    int raddress = 0x40000000;
+  
+    send_data[0] = 0;
+    send_data[1] = 4;
+    send_data[2] = 0;
+    send_data[4] = (raddress >>  0) & 0xff;
+    send_data[5] = (raddress >>  8) & 0xff;
+    send_data[6] = (raddress >> 16) & 0xff;
+    send_data[7] = (raddress >> 24) & 0xff;
+    r = libusb_bulk_transfer(dev_handle, PMODUSB_WRITE_EP, send_data, 8, &actual_length, 1000);
+    if ( r != 0 ){
+      device_close();
+      return -1;
+    }
+    printf("Send : %d Bytes\n", actual_length);
+    for ( int i = 0; i < actual_length; i++ )
+      printf("%02X ", send_data[i]);
+    printf("\n");
+    do {
+      r = libusb_bulk_transfer(dev_handle, PMODUSB_READ_EP, receive_data, 64, &actual_length, 2000);
+      if (r < 0) {
+        device_close();
+        return -1;
+      }
+    } while (actual_length == 0);
+    printf("Receive : %d Bytes\n", actual_length);
+    for ( int i = 0; i < actual_length; i++ )
+      printf("%02X ", receive_data[i]);
+    printf("\n");
+  }
+
   strcpy((char*)send_str, "hello, world\r\n");
   data_len = strlen((char*)send_str) + 1;
   for(int i = 0; i < data_len; i++){
@@ -72,13 +105,13 @@ int main() {
     send_data[9] = 0;
     send_data[10] = 0;
     send_data[11] = 0;
-    r = libusb_bulk_transfer(dev_handle, PMODUSB_WRITE_EP, send_data, 12, &dummy, 1000);
+    r = libusb_bulk_transfer(dev_handle, PMODUSB_WRITE_EP, send_data, 12, &actual_length, 1000);
     if ( r != 0 ){
       device_close();
       return -1;
     }
-    printf("Send : %d Bytes\n", dummy);
-    for ( int i = 0; i < dummy; i++ )
+    printf("Send : %d Bytes\n", actual_length);
+    for ( int i = 0; i < actual_length; i++ )
       printf("%02X ", send_data[i]);
     printf("\n");
   }

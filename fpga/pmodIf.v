@@ -47,6 +47,8 @@ module pmodIf (
     wire [9 : 0]         len;
     wire [31 : 0]        address;
     wire [63 : 0]        wdata;
+    wire [63 : 0]        rdata;
+    wire                 rlast;
 
     pmodCmd pmodCmd (
         .clk(M_AXI_ACLK),
@@ -63,7 +65,9 @@ module pmodIf (
         
         .len(len),
         .address(address),
-        .wdata(wdata)
+        .wdata(wdata),
+        .rdata(rdata),
+        .rlast(rlast)
     );
 
     budIf budIf (
@@ -106,7 +110,9 @@ module pmodIf (
         
         .len(len),
         .address(address),
-        .wdata(wdata)
+        .wdata(wdata),
+        .rdata(rdata),
+        .rlast(rlast)
     );
 
 endmodule

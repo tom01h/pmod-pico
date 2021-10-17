@@ -13,11 +13,10 @@ module pmodCmd (
 
     output logic [9:0]       len,
     output logic [31:0]      address,
-    output logic [63:0]      wdata
+    output logic [63:0]      wdata,
+    input  logic [63:0]      rdata,
+    input  logic             rlast
 );
-
-    assign pwait = 1'b0;
-    assign prd = 2'b00;
 
     logic       penable;
     logic [3:0] pck_l;
@@ -31,7 +30,7 @@ module pmodCmd (
 `endif
     end
 
-    enum { IDLE, WLEN, WADDRESS, WDATA, RLEN } state; // TEMP TEMP READ に対応してない
+    enum { IDLE, WLEN, WADDRESS, WDATA, RLEN, RADDRESS, RDATA, RFIN } state;
     logic [11:0] cnt;
     always_ff @(posedge clk) begin
         if(reset) begin
@@ -39,6 +38,7 @@ module pmodCmd (
             write_req <= 1'b0;
             read_req <= 1'b0;
             wdata <= 64'h0;
+            pwait <= 1'b0;
         end else if (penable) begin
             casez(state)
                 IDLE: begin
@@ -73,11 +73,51 @@ module pmodCmd (
                         cnt <= cnt + 1;
                     end
                 end
+                RLEN: begin
+                    len[cnt*2 +: 2] <= pwd;
+                    if(cnt == 4) begin
+                        state <= RADDRESS;
+                        cnt <= 0;
+                    end else begin
+                        cnt <= cnt + 1;
+                    end
+                end
+                RADDRESS: begin
+                    address[cnt*2 +: 2] <= pwd;
+                    if(cnt == 15) begin
+                        pwait <= 1'b1;
+                        read_req <= 1'b1;
+                        state <= RDATA;
+                        cnt <= 0;
+                    end else begin
+                        cnt <= cnt + 1;
+                    end
+                end
+                RDATA: begin   // TEMP TEMP 32bit しか対応できない // FIFO に入れたい
+                    read_req <= 1'b0;
+                    if(busy) begin
+                        pwait <= 1'b1;
+                    end else begin
+                        pwait <= 1'b0;
+                        prd <= rdata[address[2:0]*8+cnt*2 +: 2];
+                        if(cnt == 15) begin
+                            cnt <= 0;
+                            state <= RFIN;
+                        end else begin
+                            cnt <= cnt + 1;
+                        end
+                    end    
+                end
+                RFIN: begin   // firmware で最後の1クロック止めるの大変なので
+                        state <= IDLE;
+                end    
             endcase
         end else begin
-            if(write_req | read_req) begin
+            if(write_req) begin
                 state <= IDLE;
                 write_req <= 1'b0;
+            end
+            if(read_req) begin
                 read_req <= 1'b0;
             end
         end
