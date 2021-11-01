@@ -72,6 +72,8 @@ void __time_critical_func(plen)(int c, bool w)
       asm volatile("nop");
     c >>= 2;
     gpio_xor_mask(1 << PCK_PIN);
+    for (unsigned int l = 0; l < 5; l++)
+      asm volatile("nop");
   }
 }
 

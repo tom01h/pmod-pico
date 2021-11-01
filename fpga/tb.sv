@@ -110,7 +110,8 @@ module tb ();
 
         wait(~pwait);
         repeat(16) @(posedge pck);
-        /*pwrite = 1'b1;
+        pwrite = 1'b1;
+        len=2;
         for(i=0; i<14; i++) begin
             casez(i)
                 'd0:  wdata = 8'h68;
@@ -140,11 +141,12 @@ module tb ();
                 @(posedge pck);
                 pwd = wdata[2*j +: 2];
             end
-            for(j=0; j<12; j++) begin
+            //for(j=0; j<12; j++) begin
+            for(j=0; j<4; j++) begin
                 @(posedge pck);
                 pwd = 0;
             end
-        end*/
+        end
         pmod_enable = 1'b0;
 
         repeat(100)@(posedge M_AXI_ACLK);

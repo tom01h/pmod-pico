@@ -40,8 +40,8 @@ tusb_desc_device_t const desc_device =
     .bDeviceProtocol    = 0x00,
     .bMaxPacketSize0    = CFG_TUD_ENDPOINT0_SIZE,
 
-    .idVendor           = 0x01,
-    .idProduct          = 0x02,
+    .idVendor           = 0x2E8A,
+    .idProduct          = 0x0A,
     .bcdDevice          = 0x0110,
     .iManufacturer      = 0x01,
     .iProduct           = 0x02,

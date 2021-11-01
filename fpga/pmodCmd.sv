@@ -32,6 +32,7 @@ module pmodCmd (
 
     enum { IDLE, WLEN, WADDRESS, WDATA, RLEN, RADDRESS, RDATA, RFIN } state;
     logic [11:0] cnt;
+    logic [11:0] datalen;
     always_ff @(posedge clk) begin
         if(reset) begin
             state = IDLE;
@@ -64,9 +65,9 @@ module pmodCmd (
                         cnt <= cnt + 1;
                     end
                 end
-                WDATA: begin   // TEMP TEMP 32bit しか対応できない // FIFO に入れたい
+                WDATA: begin   // TEMP TEMP 64bit までしか対応できない // FIFO に入れたい
                     wdata[address[2:0]*8+cnt*2 +: 2] <= pwd;
-                    if(cnt == 15) begin
+                    if(cnt == datalen) begin
                         write_req <= 1'b1;
                         cnt <= 0;
                     end else begin
@@ -93,14 +94,14 @@ module pmodCmd (
                         cnt <= cnt + 1;
                     end
                 end
-                RDATA: begin   // TEMP TEMP 32bit しか対応できない // FIFO に入れたい
+                RDATA: begin   // TEMP TEMP 64bit までしか対応できない // FIFO に入れたい
                     read_req <= 1'b0;
                     if(busy) begin
                         pwait <= 1'b1;
                     end else begin
                         pwait <= 1'b0;
                         prd <= rdata[address[2:0]*8+cnt*2 +: 2];
-                        if(cnt == 15) begin
+                        if(cnt == datalen) begin
                             cnt <= 0;
                             state <= RFIN;
                         end else begin
@@ -109,7 +110,7 @@ module pmodCmd (
                     end    
                 end
                 RFIN: begin   // firmware で最後の1クロック止めるの大変なので
-                        state <= IDLE;
+                    state <= IDLE;
                 end    
             endcase
         end else begin
@@ -123,12 +124,14 @@ module pmodCmd (
         end
     end
 
-//                        casez(len[2:0])
-//                            3'b001: cnt <= 1 * 4 - 1;
-//                            3'b010: cnt <= 2 * 4 - 1;
-//                            3'b100: cnt <= 4 * 4 - 1;
-//                            3'b11?: cnt <= 8 * 4 - 1;
-//                            3'b000: cnt <= (len[9:3] + 1) * 4 - 1;
-//                        endcase
+    always_comb begin
+        casez(len[2:0])
+            3'b001: datalen <= 1 * 4 - 1;
+            3'b010: datalen <= 2 * 4 - 1;
+            3'b100: datalen <= 4 * 4 - 1;
+            3'b11?: datalen <= 8 * 4 - 1;
+            3'b000: datalen <= (len + 8) * 4 - 1;
+        endcase
+    end
 
 endmodule

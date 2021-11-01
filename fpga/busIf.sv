@@ -62,26 +62,26 @@ module budIf (
             M_AXI_AWVALID <= 1'b0;
             M_AXI_WVALID  <= 1'b0;
             M_AXI_RREADY  <= 1'b0;
-        end else if(~busy & read_req) begin
+        end else if(read_req) begin
             M_AXI_ARVALID <= 1'b1;
-            M_AXI_ARADDR  <= address;
+            M_AXI_ARADDR  <= {address[31:3],3'b0};
             M_AXI_RREADY  <= 1'b1;
             casez(len[2:0])
-                3'b001: begin M_AXI_ARLEN <= 8'h00;    M_AXI_ARSIZE <= 3'b000; end
-                3'b010: begin M_AXI_ARLEN <= 8'h00;    M_AXI_ARSIZE <= 3'b001; end
-                3'b100: begin M_AXI_ARLEN <= 8'h00;    M_AXI_ARSIZE <= 3'b010; end
+                3'b001: begin M_AXI_ARLEN <= 8'h00;    M_AXI_ARSIZE <= 3'b011; end
+                3'b010: begin M_AXI_ARLEN <= 8'h00;    M_AXI_ARSIZE <= 3'b011; end
+                3'b100: begin M_AXI_ARLEN <= 8'h00;    M_AXI_ARSIZE <= 3'b011; end
                 3'b11?: begin M_AXI_ARLEN <= 8'h00;    M_AXI_ARSIZE <= 3'b011; end
                 3'b000: begin M_AXI_ARLEN <= len[9:3]; M_AXI_ARSIZE <= 3'b011; end
             endcase
-        end else if(~busy & write_req) begin
+        end else if(write_req) begin
             M_AXI_AWVALID <= 1'b1;
-            M_AXI_AWADDR  <= address;
+            M_AXI_AWADDR  <= {address[31:3],3'b0};
             M_AXI_WVALID  <= 1'b1;
             M_AXI_WDATA   <= wdata;
             casez(len[2:0])
-                3'b001: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b000; M_AXI_WLAST <= 1'b1; end
-                3'b010: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b001; M_AXI_WLAST <= 1'b1; end
-                3'b100: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b010; M_AXI_WLAST <= 1'b1; end
+                3'b001: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b011; M_AXI_WLAST <= 1'b1; end
+                3'b010: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b011; M_AXI_WLAST <= 1'b1; end
+                3'b100: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b011; M_AXI_WLAST <= 1'b1; end
                 3'b11?: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b011; M_AXI_WLAST <= 1'b1; end
                 3'b000: begin M_AXI_AWLEN <= len[9:3]; M_AXI_AWSIZE <= 3'b011; M_AXI_WLAST <= 1'b0; end
             endcase

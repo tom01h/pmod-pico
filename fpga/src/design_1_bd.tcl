@@ -131,6 +131,8 @@ set bCheckIPsPassed 1
 set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
+xilinx.com:ip:axi_bram_ctrl:4.1\
+xilinx.com:ip:blk_mem_gen:8.4\
 xilinx.com:ip:axi_gpio:2.0\
 xilinx.com:ip:axi_uartlite:2.0\
 xilinx.com:ip:clk_wiz:6.0\
@@ -242,6 +244,17 @@ proc create_root_design { parentCell } {
    CONFIG.PHASE {0.000} \
  ] $sys_clock
 
+  # Create instance: axi_bram_ctrl_0, and set properties
+  set axi_bram_ctrl_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 axi_bram_ctrl_0 ]
+  set_property -dict [ list \
+   CONFIG.DATA_WIDTH {64} \
+   CONFIG.ECC_TYPE {0} \
+   CONFIG.SINGLE_PORT_BRAM {1} \
+ ] $axi_bram_ctrl_0
+
+  # Create instance: axi_bram_ctrl_0_bram, and set properties
+  set axi_bram_ctrl_0_bram [ create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 axi_bram_ctrl_0_bram ]
+
   # Create instance: axi_gpio_0, and set properties
   set axi_gpio_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 axi_gpio_0 ]
   set_property -dict [ list \
@@ -283,7 +296,7 @@ proc create_root_design { parentCell } {
   # Create instance: pmodIf_0_axi_periph, and set properties
   set pmodIf_0_axi_periph [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 pmodIf_0_axi_periph ]
   set_property -dict [ list \
-   CONFIG.NUM_MI {2} \
+   CONFIG.NUM_MI {3} \
  ] $pmodIf_0_axi_periph
 
   # Create instance: rst_clk_wiz_100M, and set properties
@@ -294,25 +307,28 @@ proc create_root_design { parentCell } {
  ] $rst_clk_wiz_100M
 
   # Create interface connections
+  connect_bd_intf_net -intf_net axi_bram_ctrl_0_BRAM_PORTA [get_bd_intf_pins axi_bram_ctrl_0/BRAM_PORTA] [get_bd_intf_pins axi_bram_ctrl_0_bram/BRAM_PORTA]
   connect_bd_intf_net -intf_net axi_uartlite_0_UART [get_bd_intf_ports usb_uart] [get_bd_intf_pins axi_uartlite_0/UART]
   connect_bd_intf_net -intf_net pmodIf_0_M_AXI [get_bd_intf_pins pmodIf_0/M_AXI] [get_bd_intf_pins pmodIf_0_axi_periph/S00_AXI]
   connect_bd_intf_net -intf_net pmodIf_0_axi_periph_M00_AXI [get_bd_intf_pins axi_uartlite_0/S_AXI] [get_bd_intf_pins pmodIf_0_axi_periph/M00_AXI]
   connect_bd_intf_net -intf_net pmodIf_0_axi_periph_M01_AXI [get_bd_intf_pins axi_gpio_0/S_AXI] [get_bd_intf_pins pmodIf_0_axi_periph/M01_AXI]
+  connect_bd_intf_net -intf_net pmodIf_0_axi_periph_M02_AXI [get_bd_intf_pins axi_bram_ctrl_0/S_AXI] [get_bd_intf_pins pmodIf_0_axi_periph/M02_AXI]
 
   # Create port connections
   connect_bd_net -net PCK_1 [get_bd_ports PCK] [get_bd_pins pmodIf_0/pck]
   connect_bd_net -net PWD_1 [get_bd_ports PWD] [get_bd_pins pmodIf_0/pwd]
   connect_bd_net -net PWRITE_1 [get_bd_ports PWRITE] [get_bd_pins pmodIf_0/pwrite]
   connect_bd_net -net SW_1 [get_bd_ports SW] [get_bd_pins axi_gpio_0/gpio_io_i]
-  connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins axi_uartlite_0/s_axi_aclk] [get_bd_pins clk_wiz/clk_out1] [get_bd_pins pmodIf_0/M_AXI_ACLK] [get_bd_pins pmodIf_0_axi_periph/ACLK] [get_bd_pins pmodIf_0_axi_periph/M00_ACLK] [get_bd_pins pmodIf_0_axi_periph/M01_ACLK] [get_bd_pins pmodIf_0_axi_periph/S00_ACLK] [get_bd_pins rst_clk_wiz_100M/slowest_sync_clk]
+  connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins axi_bram_ctrl_0/s_axi_aclk] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins axi_uartlite_0/s_axi_aclk] [get_bd_pins clk_wiz/clk_out1] [get_bd_pins pmodIf_0/M_AXI_ACLK] [get_bd_pins pmodIf_0_axi_periph/ACLK] [get_bd_pins pmodIf_0_axi_periph/M00_ACLK] [get_bd_pins pmodIf_0_axi_periph/M01_ACLK] [get_bd_pins pmodIf_0_axi_periph/M02_ACLK] [get_bd_pins pmodIf_0_axi_periph/S00_ACLK] [get_bd_pins rst_clk_wiz_100M/slowest_sync_clk]
   connect_bd_net -net clk_wiz_locked [get_bd_pins clk_wiz/locked] [get_bd_pins rst_clk_wiz_100M/dcm_locked]
   connect_bd_net -net pmodIf_0_prd [get_bd_ports PRD] [get_bd_pins pmodIf_0/prd]
   connect_bd_net -net pmodIf_0_pwait [get_bd_ports PWAIT] [get_bd_pins pmodIf_0/pwait]
   connect_bd_net -net reset_1 [get_bd_ports reset] [get_bd_pins clk_wiz/resetn] [get_bd_pins rst_clk_wiz_100M/ext_reset_in]
-  connect_bd_net -net rst_clk_wiz_100M_peripheral_aresetn [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins axi_uartlite_0/s_axi_aresetn] [get_bd_pins pmodIf_0/M_AXI_ARESETN] [get_bd_pins pmodIf_0_axi_periph/ARESETN] [get_bd_pins pmodIf_0_axi_periph/M00_ARESETN] [get_bd_pins pmodIf_0_axi_periph/M01_ARESETN] [get_bd_pins pmodIf_0_axi_periph/S00_ARESETN] [get_bd_pins rst_clk_wiz_100M/peripheral_aresetn]
+  connect_bd_net -net rst_clk_wiz_100M_peripheral_aresetn [get_bd_pins axi_bram_ctrl_0/s_axi_aresetn] [get_bd_pins axi_gpio_0/s_axi_aresetn] [get_bd_pins axi_uartlite_0/s_axi_aresetn] [get_bd_pins pmodIf_0/M_AXI_ARESETN] [get_bd_pins pmodIf_0_axi_periph/ARESETN] [get_bd_pins pmodIf_0_axi_periph/M00_ARESETN] [get_bd_pins pmodIf_0_axi_periph/M01_ARESETN] [get_bd_pins pmodIf_0_axi_periph/M02_ARESETN] [get_bd_pins pmodIf_0_axi_periph/S00_ARESETN] [get_bd_pins rst_clk_wiz_100M/peripheral_aresetn]
   connect_bd_net -net sys_clock_1 [get_bd_ports sys_clock] [get_bd_pins clk_wiz/clk_in1]
 
   # Create address segments
+  assign_bd_address -offset 0xC0000000 -range 0x00002000 -target_address_space [get_bd_addr_spaces pmodIf_0/M_AXI] [get_bd_addr_segs axi_bram_ctrl_0/S_AXI/Mem0] -force
   assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces pmodIf_0/M_AXI] [get_bd_addr_segs axi_gpio_0/S_AXI/Reg] -force
   assign_bd_address -offset 0x40600000 -range 0x00010000 -target_address_space [get_bd_addr_spaces pmodIf_0/M_AXI] [get_bd_addr_segs axi_uartlite_0/S_AXI/Reg] -force
 
