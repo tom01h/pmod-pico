@@ -4,9 +4,13 @@
 #include "pico/multicore.h"
 #include "bsp/board.h"
 #include "tusb.h"
-#include "get_serial.h"
+#include "hardware/uart.h"
 
-#define LED_PIN 25
+#define UART_ID uart0
+#define BAUD_RATE 9600
+
+#define UART_TX_PIN 0
+#define UART_RX_PIN 1
 
 #define PCK_PIN 6
 #define PWRITE_PIN 7
@@ -35,10 +39,15 @@ void core1_entry() {
 
   while (1)
   {
-    gpio_put(LED_PIN, 1);
-    sleep_ms(500);
-    gpio_put(LED_PIN, 0);
-    sleep_ms (500);
+    int c;
+    c = getchar_timeout_us(10);
+    if(c!=0){
+      uart_putc_raw(UART_ID, c);
+    }
+    if(uart_is_readable(UART_ID)){
+      c = uart_getc(UART_ID);
+      putchar(c);
+    }
   }
 
 }
@@ -167,13 +176,14 @@ bool tud_vendor_control_xfer_cb(__attribute__((unused)) uint8_t rhport, uint8_t 
 
 int main()
 {
-  board_init();
-  usb_serial_init();
   tusb_init();
+  stdio_usb_init();
+  board_init();
 
-  // LED config
-  gpio_init(LED_PIN);
-  gpio_set_dir(LED_PIN, GPIO_OUT);
+  // Set up our UART with the required speed.
+  uart_init(UART_ID, BAUD_RATE);
+  gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
+  gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
 
   // pmod config
   gpio_init(PCK_PIN);

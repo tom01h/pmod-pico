@@ -7,9 +7,9 @@
 #include <libusb.h>
 #define PMODUSB_VID       0x2E8A
 #define PMODUSB_PID       0x0A
-#define PMODUSB_INTF      0
-#define PMODUSB_READ_EP   0x82
-#define PMODUSB_WRITE_EP  0x01
+#define PMODUSB_INTF      2
+#define PMODUSB_READ_EP   0x84
+#define PMODUSB_WRITE_EP  0x03
 libusb_context *usb_ctx;
 libusb_device_handle *dev_handle;
 
@@ -155,10 +155,10 @@ int main() {
   int waddress = 0xc0000000;
   gettimeofday(&time1, NULL);
   for(int i = 0; i < 128; i++){
-    for(int j = 0; j < 8; j++){
-      send_data.data.l[0] = buf[i].c[j];
-      actual_length = write_dev(1, waddress, send_data);
-      waddress += 1;
+    for(int j = 0; j < 1; j++){
+      send_data.data.l[0] = buf[i].l;
+      actual_length = write_dev(6, waddress, send_data);
+      waddress += 8;
     }
   }
   gettimeofday(&time2, NULL);
@@ -184,12 +184,12 @@ int main() {
   gettimeofday(&time1, NULL);
   raddress = 0xc0000000;
   for(int i = 0; i < 128; i++){
-    for(int ii = 0; ii < 1; ii++){
-      actual_length = read_dev(6, raddress, receive_data);
+    for(int ii = 0; ii < 8; ii++){
+      actual_length = read_dev(1, raddress, receive_data);
       for ( int j = 0; j < actual_length; j++ )
-        if(buf[i].c[ii*8+j] != receive_data[j])
+        if(buf[i].c[ii*1+j] != receive_data[j])
           printf("error: %d, %d\n", i, j);
-      raddress += 8;
+      raddress += 1;
     }
   }
   gettimeofday(&time2, NULL);

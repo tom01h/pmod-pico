@@ -1,7 +1,8 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2021 Federico Zuccardi Merli
+ * Copyright (c) 2020 Raspberry Pi (Trading) Ltd.
+ * Copyright (c) 2020 Damien P. George
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,28 +24,18 @@
  *
  */
 
-#include "pico/types.h"
-#include "pico/unique_id.h"
-#include "get_serial.h"
+#ifndef _PICO_STDIO_USB_TUSB_CONFIG_H
+#define _PICO_STDIO_USB_TUSB_CONFIG_H
 
-/* C string for iSerialNumber in USB Device Descriptor, two chars per byte + terminating NUL */
-char usb_serial[PICO_UNIQUE_BOARD_ID_SIZE_BYTES * 2 + 1];
+#include "pico/stdio_usb.h"
 
-/* Why a uint8_t[8] array inside a struct instead of an uint64_t an inquiring mind might wonder */
-static pico_unique_board_id_t uID;
+#define CFG_TUSB_RHPORT0_MODE   (OPT_MODE_DEVICE)
 
-void usb_serial_init(void)
-{
-    pico_get_unique_board_id(&uID);
+#define CFG_TUD_CDC             (1)
+#define CFG_TUD_CDC_RX_BUFSIZE  (256)
+#define CFG_TUD_CDC_TX_BUFSIZE  (256)
 
-    for (int i = 0; i < PICO_UNIQUE_BOARD_ID_SIZE_BYTES * 2; i++)
-    {
-        /* Byte index inside the uid array */
-        int bi = i / 2;
-        /* Use high nibble first to keep memory order (just cosmetics) */
-        uint8_t nibble = (uID.id[bi] >> 4) & 0x0F;
-        uID.id[bi] <<= 4;
-        /* Binary to hex digit */
-        usb_serial[i] = nibble < 10 ? nibble + '0' : nibble + 'A' - 10;
-    }
-}
+#define CFG_TUD_VENDOR            (1)
+#define CFG_TUD_VENDOR_RX_BUFSIZE (128)
+#define CFG_TUD_VENDOR_TX_BUFSIZE (64)
+#endif
