@@ -7,7 +7,8 @@ module pmodCmd (
     output logic [1:0]       prd,
     output logic             pwait,
 
-    output logic             write_req,
+    output logic             write_req,     // 64bit data valid
+    output logic             write_bus_req, // all data valid
     output logic             read_req,
     input  logic             busy,
 
@@ -37,6 +38,7 @@ module pmodCmd (
         if(reset) begin
             state = IDLE;
             write_req <= 1'b0;
+            write_bus_req <= 1'b0;
             read_req <= 1'b0;
             wdata <= 64'h0;
             pwait <= 1'b0;
@@ -65,12 +67,14 @@ module pmodCmd (
                         cnt <= cnt + 1;
                     end
                 end
-                WDATA: begin   // TEMP TEMP 64bit までしか対応できない // FIFO に入れたい
-                    wdata[address[2:0]*8+cnt*2 +: 2] <= pwd;
+                WDATA: begin
+                    wdata[(address[2:0]*8+cnt*2)%64 +: 2] <= pwd;
                     if(cnt == datalen) begin
                         write_req <= 1'b1;
+                        write_bus_req <= 1'b1;
                         cnt <= 0;
                     end else begin
+                        if((cnt % (4*8)) == (4*8-1)) write_req <= 1'b1;
                         cnt <= cnt + 1;
                     end
                 end
@@ -114,13 +118,12 @@ module pmodCmd (
                 end    
             endcase
         end else begin
-            if(write_req) begin
+            if(write_bus_req) begin
                 state <= IDLE;
-                write_req <= 1'b0;
             end
-            if(read_req) begin
-                read_req <= 1'b0;
-            end
+            write_bus_req <= 1'b0;
+            write_req <= 1'b0;
+            read_req <= 1'b0;
         end
     end
 

@@ -21,10 +21,10 @@ union u_data_t {
 };
 
 union u_send_data_t {
-  unsigned char c[56];
-  short s[28];
-  int i[14];
-  long long l[7];
+  unsigned char c[1024];
+  short s[512];
+  int i[128];
+  long long l[64];
 };
 
 struct send_data_t {
@@ -73,8 +73,8 @@ int read_dev(int size, int raddress, unsigned char receive_data[]) {
   struct send_data_t send_data;
 
   send_data.com[0] = 0;
-  send_data.com[1] = size;
-  send_data.com[2] = 0;
+  send_data.com[1] = size%256;
+  send_data.com[2] = size/256;
   send_data.address = raddress;
 
   r = libusb_bulk_transfer(dev_handle, PMODUSB_WRITE_EP, &send_data.com[0], 8, &actual_length, 1000);
@@ -98,18 +98,46 @@ int write_dev(int size, int waddress, struct send_data_t send_data) {
   int actual_length = 0;
 
   send_data.com[0] = 1;
-  send_data.com[1] = size;
-  send_data.com[2] = 0;
+  send_data.com[1] = size%256;
+  send_data.com[2] = size/256;
   send_data.address = waddress;
 
+  int ds;
+  if(size>=8)     ds = size+8;
+  else if(size>4) ds = 8;
+  else            ds = size;
+  
   int ts;
-  if(size>4) ts = 8;
-  else       ts = size;
+  if(ds <= 56){
+    ts = ds;
+    ds = 0;
+  }else{
+    ts = 56;
+    ds -= 56;
+  }
     
   r = libusb_bulk_transfer(dev_handle, PMODUSB_WRITE_EP, &send_data.com[0], ts+8 , &actual_length, 1000);// size==6,7 -> 16
   if ( r != 0 ){
     device_close();
     return -1;
+  }
+
+  int send_index = 56;
+
+  while(ds != 0){
+    if(ds <= 64){
+      ts = ds;
+      ds = 0;
+    }else{
+      ts = 64;
+      ds -= 64;
+    }
+    r = libusb_bulk_transfer(dev_handle, PMODUSB_WRITE_EP, &send_data.data.c[send_index], ts , &actual_length, 1000);
+    if ( r != 0 ){
+      device_close();
+      return -1;
+    }
+    send_index += 64;
   }
 
   return actual_length;
@@ -144,6 +172,7 @@ int main() {
   for(int i = 0; i < 128; i++){
     for(int j = 0; j < 4; j++){
       buf[i].s[j] = rand() & 0xffff;
+      send_data.data.s[i*4+j] = buf[i].s[j];
     }
   }
 
@@ -154,13 +183,26 @@ int main() {
 
   int waddress = 0xc0000000;
   gettimeofday(&time1, NULL);
-  for(int i = 0; i < 128; i++){
-    for(int j = 0; j < 1; j++){
-      send_data.data.l[0] = buf[i].l;
-      actual_length = write_dev(6, waddress, send_data);
-      waddress += 8;
+  actual_length = write_dev(1024-8, waddress, send_data);
+  if(actual_length < 0) return -1;
+  
+  /*for(int i = 0; i < 32; i++){
+    send_data.data.l[0] = buf[i*4].l;
+    send_data.data.l[1] = buf[i*4+1].l;
+    send_data.data.l[2] = buf[i*4+2].l;
+    send_data.data.l[3] = buf[i*4+3].l;
+    actual_length = write_dev(24, waddress, send_data);
+    if(actual_length < 0) return -1;
+    waddress += 32;
+  }/**/
+  /*for(int i = 0; i < 128; i++){
+    for(int j = 0; j < 2; j++){
+      send_data.data.l[0] = buf[i].i[j];
+      actual_length = write_dev(4, waddress, send_data);
+      if(actual_length < 0) return -1;
+      waddress += 4;
     }
-  }
+  }/**/
   gettimeofday(&time2, NULL);
   diff_time = (time2.tv_sec - time1.tv_sec) * 1000 +  (float)(time2.tv_usec - time1.tv_usec) / 1000;
   printf("Send data: %f ms\n", diff_time);
@@ -170,6 +212,7 @@ int main() {
   for(int i = 0; i < 5; i++){
     for(int ii = 0; ii < 1; ii++){
       actual_length = read_dev(6, raddress, receive_data);
+      if(actual_length < 0) return -1;
       printf("%d, ", i);
       for ( int j = 0; j < actual_length; j++ )
         printf("%02X ", receive_data[actual_length-j-1]);
@@ -186,6 +229,7 @@ int main() {
   for(int i = 0; i < 128; i++){
     for(int ii = 0; ii < 8; ii++){
       actual_length = read_dev(1, raddress, receive_data);
+      if(actual_length < 0) return -1;
       for ( int j = 0; j < actual_length; j++ )
         if(buf[i].c[ii*1+j] != receive_data[j])
           printf("error: %d, %d\n", i, j);

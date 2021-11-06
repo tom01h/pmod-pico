@@ -71,7 +71,7 @@ module tb ();
     logic          pmod_enable = 1'b0;
     integer        i,j;
     logic [9:0]    len = 'd4;
-    logic [31:0]   waddress = 32'h4060_0004;
+    logic [31:0]   waddress = 32'h4060_0000;
     logic [7:0]    wdata;
     logic [31:0]   raddress = 32'h4000_0000;
     always begin
@@ -107,11 +107,11 @@ module tb ();
         M_AXI_RVALID  = 1'b0;
         M_AXI_RLAST   = 1'b0;
 
-
         wait(~pwait);
         repeat(16) @(posedge pck);
+
         pwrite = 1'b1;
-        len=2;
+        len=8;
         for(i=0; i<14; i++) begin
             casez(i)
                 'd0:  wdata = 8'h68;
@@ -141,10 +141,11 @@ module tb ();
                 @(posedge pck);
                 pwd = wdata[2*j +: 2];
             end
+            for(j=0; j<12+16; j++) begin
             //for(j=0; j<12; j++) begin
-            for(j=0; j<4; j++) begin
+            //for(j=0; j<4; j++) begin
                 @(posedge pck);
-                pwd = 0;
+                pwd = j;
             end
         end
         pmod_enable = 1'b0;

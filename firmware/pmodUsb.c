@@ -130,29 +130,47 @@ void __time_critical_func(pwrite)(uint8_t *buffer, int size, bool w)
 
 void __time_critical_func(pmod_task)()
 {
-  if (buffer_infos.busy)
+  static int write;
+  static int size;
+  int len;
+  int max_wlen;
+  int max_rlen = 64;
+  uint8_t *buffer;
+  if (buffer_infos.busy) // || (write==0) && (size != 0)
   {
-    int len = buffer_infos.buffer[2] * 256 + buffer_infos.buffer[1];
-    int size;
-    switch(len){
-      case 1:  size = 1; break;
-      case 2:  size = 2; break;
-      case 4:  size = 4; break;
-      case 6:
-      case 7:  size = 8; break;
-      default: size = len + 8; break;
+    if(size == 0){
+      write = buffer_infos.buffer[0];
+      len = buffer_infos.buffer[2] * 256 + buffer_infos.buffer[1];
+      switch(len){
+        case 1:  size = 1; break;
+        case 2:  size = 2; break;
+        case 4:  size = 4; break;
+        case 6:
+        case 7:  size = 8; break;
+        default: size = len + 8; break;
+      }
+      plen(len, write);                           // LEN
+      pwrite(&buffer_infos.buffer[4], 4, write);  // ADDRESS
+      buffer = &buffer_infos.buffer[8];
+      max_wlen = 56;
+    }else{
+      buffer = &buffer_infos.buffer[0];
+      max_wlen = 64;
     }
-    if(buffer_infos.buffer[0]){  // WRITE
-      plen(len, 1);                             // LEN
-      pwrite(&buffer_infos.buffer[4], 4, 1);    // ADDRESS
-      pwrite(&buffer_infos.buffer[8], size, 1); // DATA
+    if(write){               // WRITE
+      if(size > max_wlen){                        // DATA
+        pwrite(buffer, max_wlen, 1);
+        size -= max_wlen;
+      }else{
+        pwrite(buffer, size, 1);
+        size = 0;
+      }
       buffer_infos.busy = false;
-    }else{                       // READ
-      plen(len, 0);                             // LEN
-      pwrite(&buffer_infos.buffer[4], 4, 0);    // ADDRESS
-      pread(&buffer_infos.buffer[0], size);     // DATA
+    }else{                   // READ
+      pread(&buffer_infos.buffer[0], size);       // DATA
       buffer_infos.count = size;
       buffer_infos.busy = true;
+      size = 0;
     }
   }
 }

@@ -40,7 +40,8 @@ module pmodIf (
 );
    
    
-    wire                 write_req;
+    wire                 write_req;     // 64bit data valid
+    wire                 write_bus_req; // all data valid
     wire                 read_req;
     wire                 busy;
 
@@ -60,6 +61,7 @@ module pmodIf (
         .pwait(pwait),
 
         .write_req(write_req),
+        .write_bus_req(write_bus_req),
         .read_req(read_req),
         .busy(busy),
         
@@ -105,6 +107,7 @@ module pmodIf (
         .M_AXI_RREADY(M_AXI_RREADY),
         
         .write_req(write_req),
+        .write_bus_req(write_bus_req),
         .read_req(read_req),
         .busy(busy),
         
