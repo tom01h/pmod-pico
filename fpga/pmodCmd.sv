@@ -129,11 +129,12 @@ module pmodCmd (
 
     always_comb begin
         casez(len[2:0])
-            3'b001: datalen <= 1 * 4 - 1;
-            3'b010: datalen <= 2 * 4 - 1;
-            3'b100: datalen <= 4 * 4 - 1;
-            3'b11?: datalen <= 8 * 4 - 1;
-            3'b000: datalen <= (len + 8) * 4 - 1;
+            3'b001: datalen = 1 * 4 - 1;
+            3'b010: datalen = 2 * 4 - 1;
+            3'b100: datalen = 4 * 4 - 1;
+            3'b11?: datalen = 8 * 4 - 1;
+            3'b000: datalen = (len + 8) * 4 - 1;
+            default: datalen = {12{1'bx}};
         endcase
     end
 

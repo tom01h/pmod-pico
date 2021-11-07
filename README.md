@@ -33,7 +33,7 @@ pico の↓のハードウエア UART ピンを FPGA の UART とつなぐ。
 #define UART_RX_PIN 1
 ```
 
-FPGA の UART は 9600bps に設定する。
+FPGA の UART は 115200bps に設定する。
 
 pico の USB をつなぐと /dev/ttyACMn が生えてくる。
 
