@@ -20,14 +20,14 @@ module pmodCmd (
 );
 
     logic       penable;
-    logic [3:0] pck_l;
+    logic [1:0] pck_l;
     always_ff @(posedge clk) begin
-        pck_l <= {pck_l[2:0], pck};
+        pck_l <= {pck_l[0:0], pck};
         if(reset) penable <= 1'b0;
 `ifdef SIM
         else      penable <= ({pck_l[0], pck} == 2'b10);      // SIM 用
 `else
-        else      penable <= ({pck_l[3:0], pck} == 5'b10000); // 気持ちジッタ対策
+        else      penable <= ({pck_l[1:0], pck} == 3'b100); // 気持ちジッタ対策
 `endif
     end
 

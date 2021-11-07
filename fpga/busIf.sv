@@ -100,8 +100,8 @@ module budIf (
             M_AXI_AWVALID <= 1'b1;
             M_AXI_AWADDR  <= {address[31:3],3'b0};
             M_AXI_WVALID  <= 1'b1;
-            if(len[9:3] == 0) M_AXI_WDATA   <= wdata;
-            else              M_AXI_WDATA   <= rdata_buf;
+            //if(len[9:3] == 0) M_AXI_WDATA   <= wdata;
+            //else              M_AXI_WDATA   <= rdata_buf;
             rptr <= rptr + 1;
             casez(len[2:0])
                 3'b001: begin M_AXI_AWLEN <= 8'h00;    M_AXI_AWSIZE <= 3'b011; M_AXI_WLAST <= 1'b1; end
@@ -129,14 +129,21 @@ module budIf (
             if(M_AXI_AWVALID & M_AXI_AWREADY) M_AXI_AWVALID <= 1'b0;
             if(M_AXI_WVALID  & M_AXI_WREADY) begin
                 if(~M_AXI_WLAST) begin
-                    if(nrptr == wptr) M_AXI_WDATA   <= wdata;
-                    else              M_AXI_WDATA   <= rdata_buf;
+                    //if(nrptr == wptr) M_AXI_WDATA   <= wdata;
+                    //else              M_AXI_WDATA   <= rdata_buf;
                     rptr <= nrptr;
                 end
                 if(M_AXI_WLAST)       M_AXI_WVALID <= 1'b0;
                 else if(wcnt == 8'b1) M_AXI_WLAST <= 1'b1;
                 else                  wcnt <= wcnt - 1;
             end
+        end
+        if(M_AXI_WVALID  & M_AXI_WREADY) begin // 周波数対策
+            if(nrptr == wptr) M_AXI_WDATA   <= wdata;
+            else              M_AXI_WDATA   <= rdata_buf;
+        end else if(write_bus_req) begin
+            if(len[9:3] == 0) M_AXI_WDATA   <= wdata;
+            else              M_AXI_WDATA   <= rdata_buf;
         end
     end
 

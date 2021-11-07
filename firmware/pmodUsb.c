@@ -77,12 +77,10 @@ void __time_critical_func(plen)(int c, bool w)
   {
     uint32_t val = (1 << PCK_PIN) | (w << PWRITE_PIN) | ((c&3) << PWD0_PIN);
     gpio_put_masked(msk, val);
-    for (unsigned int l = 0; l < 5; l++)
-      asm volatile("nop");
+    asm volatile("nop");
     c >>= 2;
     gpio_xor_mask(1 << PCK_PIN);
-    for (unsigned int l = 0; l < 5; l++)
-      asm volatile("nop");
+    asm volatile("nop");
   }
 }
 
@@ -120,10 +118,10 @@ void __time_critical_func(pwrite)(uint8_t *buffer, int size, bool w)
     {
       uint32_t val = (1 << PCK_PIN) | (w << PWRITE_PIN) | ((c&3) << PWD0_PIN);
       gpio_put_masked(msk, val);
-      for (unsigned int l = 0; l < 5; l++)
-        asm volatile("nop");
+      asm volatile("nop");
       c >>= 2;
       gpio_xor_mask(1 << PCK_PIN);
+      asm volatile("nop");
     }
   }
 }
