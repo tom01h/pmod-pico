@@ -24,7 +24,6 @@ if (TARGET tinyusb_device)
 
 	add_executable(pmodUsb
 		pmodUsb.c
-		pico_stdio_usb/stdio_usb.c
 		pico_stdio_usb/stdio_usb_descriptors.c
 	)
 

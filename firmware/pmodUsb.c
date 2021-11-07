@@ -33,20 +33,32 @@ typedef struct buffer_info
 } buffer_info;
 
 buffer_info buffer_infos;
-uint32_t msk = (1 << PCK_PIN) | (1 << PWRITE_PIN) | (   3  << PWD0_PIN);
+uint32_t msk = (1 << PCK_PIN) | (1 << PWRITE_PIN) | (3  << PWD0_PIN);
 
-void core1_entry() {
-
+void __time_critical_func(core1_entry)()
+{
   while (1)
   {
-    int c;
-    c = getchar_timeout_us(10);
-    if(c!=0){
-      uart_putc_raw(UART_ID, c);
+    if(tud_cdc_n_available(0)){
+      char buf[64];
+      uint32_t count = tud_cdc_n_read(0, buf, sizeof(buf));
+      tud_cdc_n_read_flush(0);
+      for(int i = 0; i < count; i++){
+        uart_putc(UART_ID, buf[i]);
+        if(buf[i]==0x0d) uart_putc(UART_ID, 0x0a);
+      }
     }
-    if(uart_is_readable(UART_ID)){
-      c = uart_getc(UART_ID);
-      putchar(c);
+
+    int i = 0;
+    char str[56];  
+    while(uart_is_readable(UART_ID)){
+      str[i] = uart_getc(UART_ID);
+      i++;
+    }
+    str[i] = 0;
+    if(i != 0){
+      tud_cdc_n_write_str(0, str);
+      tud_cdc_n_write_flush(0);
     }
   }
 
@@ -193,13 +205,13 @@ bool tud_vendor_control_xfer_cb(__attribute__((unused)) uint8_t rhport, uint8_t 
 int main()
 {
   tusb_init();
-  stdio_usb_init();
   board_init();
 
   // Set up our UART with the required speed.
   uart_init(UART_ID, BAUD_RATE);
   gpio_set_function(UART_TX_PIN, GPIO_FUNC_UART);
   gpio_set_function(UART_RX_PIN, GPIO_FUNC_UART);
+  uart_set_fifo_enabled(UART_ID, true);
 
   // pmod config
   gpio_init(PCK_PIN);

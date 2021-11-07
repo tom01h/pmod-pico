@@ -27,6 +27,11 @@ union u_send_data_t {
   long long l[64];
 };
 
+struct send_com_t {
+  unsigned char com[4];
+  int address;
+};
+
 struct send_data_t {
   unsigned char com[4];
   int address;
@@ -70,7 +75,7 @@ int read_dev(int size, int raddress, unsigned char receive_data[]) {
   int r;
   int actual_length = 0;
 
-  struct send_data_t send_data;
+  struct send_com_t send_data;
 
   send_data.com[0] = 0;
   send_data.com[1] = size%256;
@@ -145,7 +150,7 @@ int write_dev(int size, int waddress, struct send_data_t send_data) {
 
 int main() {
   struct send_data_t send_data;
-  unsigned char receive_data[64] = {0};
+  unsigned char receive_data[1024] = {0};
   unsigned char     send_str[64] = {0};
   int data_len;
 
@@ -167,7 +172,8 @@ int main() {
   union u_data_t buf[128];
   struct timeval time1;
   struct timeval time2;
-  float diff_time;
+  float write_time;
+  float read_time;
 
   for(int i = 0; i < 128; i++){
     for(int j = 0; j < 4; j++){
@@ -184,7 +190,7 @@ int main() {
   int waddress = 0xc0000000;
   gettimeofday(&time1, NULL);
   actual_length = write_dev(1024-8, waddress, send_data);
-  if(actual_length < 0) return -1;
+  //if(actual_length < 0) return -1;
   
   /*for(int i = 0; i < 32; i++){
     send_data.data.l[0] = buf[i*4].l;
@@ -204,8 +210,8 @@ int main() {
     }
   }/**/
   gettimeofday(&time2, NULL);
-  diff_time = (time2.tv_sec - time1.tv_sec) * 1000 +  (float)(time2.tv_usec - time1.tv_usec) / 1000;
-  printf("Send data: %f ms\n", diff_time);
+  write_time = (time2.tv_sec - time1.tv_sec) * 1000 +  (float)(time2.tv_usec - time1.tv_usec) / 1000;
+  printf("Send data: %5.2f ms\n", write_time);
 
   printf("Recieve data\n");
   raddress = 0xc0000000;
@@ -227,31 +233,60 @@ int main() {
   gettimeofday(&time1, NULL);
   raddress = 0xc0000000;
   for(int i = 0; i < 128; i++){
-    for(int ii = 0; ii < 8; ii++){
-      actual_length = read_dev(1, raddress, receive_data);
+    for(int ii = 0; ii < 1; ii++){
+      actual_length = read_dev(6, raddress, receive_data);
       if(actual_length < 0) return -1;
       for ( int j = 0; j < actual_length; j++ )
         if(buf[i].c[ii*1+j] != receive_data[j])
           printf("error: %d, %d\n", i, j);
-      raddress += 1;
+      raddress += 8;
     }
   }
   gettimeofday(&time2, NULL);
-  diff_time = (time2.tv_sec - time1.tv_sec) * 1000 +  (float)(time2.tv_usec - time1.tv_usec) / 1000;
-  printf("Recieve data: %f ms\n", diff_time);
+  read_time = (time2.tv_sec - time1.tv_sec) * 1000 +  (float)(time2.tv_usec - time1.tv_usec) / 1000;
+  printf("Recieve data: %5.2f ms\n", read_time);
 
-  strcpy((char*)send_str, "hello, world\r\n");
+  sprintf((char*)send_str, "Send data: %5.2f ms\r\n", write_time);
   data_len = strlen((char*)send_str) + 1;
+  waddress = 0x40600004;
+  raddress = 0x40600008;
   for(int i = 0; i < data_len; i++){
-    waddress = 0x40600004;
   
     send_data.data.c[0] = send_str[i];
     send_data.data.c[1] = 0;
     send_data.data.c[2] = 0;
     send_data.data.c[3] = 0;
+    do{
+      actual_length = read_dev(1, raddress, receive_data);
+    }while((receive_data[0]&0x4) != 4);
+    actual_length = write_dev(4, waddress, send_data);
+  }
+  sprintf((char*)send_str, "Recieve data: %5.2f ms\r\n", read_time);
+  data_len = strlen((char*)send_str) + 1;
+  waddress = 0x40600004;
+  raddress = 0x40600008;
+  for(int i = 0; i < data_len; i++){
+  
+    send_data.data.c[0] = send_str[i];
+    send_data.data.c[1] = 0;
+    send_data.data.c[2] = 0;
+    send_data.data.c[3] = 0;
+    do{
+      actual_length = read_dev(1, raddress, receive_data);
+    }while((receive_data[0]&0x4) != 4);
     actual_length = write_dev(4, waddress, send_data);
   }
 
+  raddress = 0x40600000;
+
+  actual_length = read_dev(1, 0x40600008, receive_data);
+  while((receive_data[0]&0x1) == 1){
+    actual_length = read_dev(1, raddress, receive_data);
+    if(receive_data[0] != 0x0d) printf("%c", receive_data[0]);
+    actual_length = read_dev(1, 0x40600008, receive_data);
+  }
+  printf("\n");
+  
   device_close();
   return 0;
 }
