@@ -45,12 +45,11 @@ void __time_critical_func(core1_entry)()
       tud_cdc_n_read_flush(0);
       for(int i = 0; i < count; i++){
         uart_putc(UART_ID, buf[i]);
-        if(buf[i]==0x0d) uart_putc(UART_ID, 0x0a);
       }
     }
 
     int i = 0;
-    char str[56];  
+    char str[56];
     while(uart_is_readable(UART_ID)){
       str[i] = uart_getc(UART_ID);
       i++;
@@ -106,6 +105,7 @@ void __time_critical_func(pread)(uint8_t *buffer, int size)
     {
       uint32_t val = (1 << PCK_PIN);
       gpio_put_masked(msk, val);
+      asm volatile("nop");
       c >>= 2;
       j++;
       ci = gpio_get_all();
@@ -116,6 +116,7 @@ void __time_critical_func(pread)(uint8_t *buffer, int size)
         j--;
       }
       gpio_put_masked(msk, 0);
+      asm volatile("nop");
     }
     buffer[i] = c;
   }
@@ -146,8 +147,7 @@ void __time_critical_func(pmod_task)()
   int max_wlen;
   int max_rlen = 64;
   uint8_t *buffer;
-  if (buffer_infos.busy) // || (write==0) && (size != 0)
-  {
+  if (buffer_infos.busy){
     if(size == 0){
       write = buffer_infos.buffer[0];
       len = buffer_infos.buffer[2] * 256 + buffer_infos.buffer[1];
@@ -177,20 +177,20 @@ void __time_critical_func(pmod_task)()
       }
       buffer_infos.busy = false;
     }else{                   // READ
-      pread(&buffer_infos.buffer[0], size);       // DATA
-      buffer_infos.count = size;
-      buffer_infos.busy = true;
-      size = 0;
+      while(size){
+        if(size > max_rlen){                        // DATA
+          pread(&buffer_infos.buffer[0], max_rlen);
+          buffer_infos.count = max_rlen;
+          size -= max_rlen;
+        }else{
+          pread(&buffer_infos.buffer[0], size);
+          buffer_infos.count = size;
+          buffer_infos.busy = false;
+          size = 0;
+        }
+        while(tud_vendor_write(buffer_infos.buffer, buffer_infos.count) == 0) tud_task();
+      }
     }
-  }
-}
-
-void __time_critical_func(to_host_task)()
-{
-  if (buffer_infos.busy)
-  {
-    tud_vendor_write(buffer_infos.buffer, buffer_infos.count);
-    buffer_infos.busy = false;
   }
 }
 
@@ -237,6 +237,5 @@ int main()
   while (1) {
     from_host_task();
     pmod_task();
-    to_host_task();
   }
 }

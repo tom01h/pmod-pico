@@ -42,14 +42,13 @@ module pmodIf (
    
     wire                 write_req;     // 64bit data valid
     wire                 write_bus_req; // all data valid
-    wire                 read_req;
-    wire                 busy;
+    wire                 read_req;      // next read data request
+    wire                 read_bus_req;  // read address valid (generate bus request)
 
     wire [9 : 0]         len;
     wire [31 : 0]        address;
     wire [63 : 0]        wdata;
     wire [63 : 0]        rdata;
-    wire                 rlast;
 
     pmodCmd pmodCmd (
         .clk(M_AXI_ACLK),
@@ -63,13 +62,13 @@ module pmodIf (
         .write_req(write_req),
         .write_bus_req(write_bus_req),
         .read_req(read_req),
+        .read_bus_req(read_bus_req),
         .busy(busy),
         
         .len(len),
         .address(address),
         .wdata(wdata),
-        .rdata(rdata),
-        .rlast(rlast)
+        .rdata(rdata)
     );
 
     budIf budIf (
@@ -109,13 +108,13 @@ module pmodIf (
         .write_req(write_req),
         .write_bus_req(write_bus_req),
         .read_req(read_req),
+        .read_bus_req(read_bus_req),
         .busy(busy),
         
         .len(len),
         .address(address),
         .wdata(wdata),
-        .rdata(rdata),
-        .rlast(rlast)
+        .rdata(rdata)
     );
 
 endmodule

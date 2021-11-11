@@ -9,25 +9,25 @@ module pmodCmd (
 
     output logic             write_req,     // 64bit data valid
     output logic             write_bus_req, // all data valid
-    output logic             read_req,
+    output logic             read_req,      // next read data request
+    output logic             read_bus_req,  // read address valid (generate bus request)
     input  logic             busy,
 
     output logic [9:0]       len,
     output logic [31:0]      address,
     output logic [63:0]      wdata,
-    input  logic [63:0]      rdata,
-    input  logic             rlast
+    input  logic [63:0]      rdata
 );
 
     logic       penable;
-    logic [1:0] pck_l;
+    logic [2:0] pck_l;
     always_ff @(posedge clk) begin
-        pck_l <= {pck_l[0:0], pck};
+        pck_l <= {pck_l[1:0], pck};
         if(reset) penable <= 1'b0;
 `ifdef SIM
         else      penable <= ({pck_l[0], pck} == 2'b10);      // SIM 用
 `else
-        else      penable <= ({pck_l[1:0], pck} == 3'b100); // 気持ちジッタ対策
+        else      penable <= ({pck_l[2:0], pck} == 4'b1000); // 気持ちジッタ対策
 `endif
     end
 
@@ -40,6 +40,7 @@ module pmodCmd (
             write_req <= 1'b0;
             write_bus_req <= 1'b0;
             read_req <= 1'b0;
+            read_bus_req <= 1'b0;
             wdata <= 64'h0;
             pwait <= 1'b0;
         end else if (penable) begin
@@ -91,25 +92,25 @@ module pmodCmd (
                     address[cnt*2 +: 2] <= pwd;
                     if(cnt == 15) begin
                         pwait <= 1'b1;
-                        read_req <= 1'b1;
+                        read_bus_req <= 1'b1;
                         state <= RDATA;
                         cnt <= 0;
                     end else begin
                         cnt <= cnt + 1;
                     end
                 end
-                RDATA: begin   // TEMP TEMP 64bit までしか対応できない // FIFO に入れたい
-                    read_req <= 1'b0;
+                RDATA: begin
                     if(busy) begin
                         pwait <= 1'b1;
                     end else begin
                         pwait <= 1'b0;
-                        prd <= rdata[address[2:0]*8+cnt*2 +: 2];
+                        prd <= rdata[(address[2:0]*8+cnt*2)%64 +: 2];
                         if(cnt == datalen) begin
                             cnt <= 0;
                             state <= RFIN;
                         end else begin
                             cnt <= cnt + 1;
+                            if(((cnt % (4*8)) == (4*8-1)) || (cnt == 0)) read_req <= 1'b1;
                         end
                     end    
                 end
@@ -123,6 +124,7 @@ module pmodCmd (
             end
             write_bus_req <= 1'b0;
             write_req <= 1'b0;
+            read_bus_req <= 1'b0;
             read_req <= 1'b0;
         end
     end

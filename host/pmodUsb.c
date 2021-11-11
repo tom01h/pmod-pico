@@ -74,6 +74,7 @@ void device_close()
 int read_dev(int size, int raddress, unsigned char receive_data[]) {
   int r;
   int actual_length = 0;
+  int total_length = 0;
 
   struct send_com_t send_data;
 
@@ -87,15 +88,18 @@ int read_dev(int size, int raddress, unsigned char receive_data[]) {
     device_close();
     return -1;
   }
-  do {
-    r = libusb_bulk_transfer(dev_handle, PMODUSB_READ_EP, receive_data, 64, &actual_length, 2000);
-    if (r < 0) {
-      device_close();
-      return -1;
-    }
-  } while (actual_length == 0);
-
-  return actual_length;
+  for(int i=0; i < (size+8+63)/64; i++){
+    do {
+      r = libusb_bulk_transfer(dev_handle, PMODUSB_READ_EP, &receive_data[i*64], 64, &actual_length, 2000);
+      if (r < 0) {
+        device_close();
+        return -1;
+      }
+    } while (actual_length == 0);
+    total_length += actual_length;
+    //printf("i %d, t %d\n", i, total_length);
+  }
+  return total_length;
 }
 
 int write_dev(int size, int waddress, struct send_data_t send_data) {
@@ -215,9 +219,10 @@ int main() {
 
   printf("Recieve data\n");
   raddress = 0xc0000000;
-  for(int i = 0; i < 5; i++){
+  for(int i = 0; i < 4; i++){
     for(int ii = 0; ii < 1; ii++){
-      actual_length = read_dev(6, raddress, receive_data);
+      actual_length = read_dev(32-8, raddress, receive_data);
+      printf("length %d\n", actual_length);
       if(actual_length < 0) return -1;
       printf("%d, ", i);
       for ( int j = 0; j < actual_length; j++ )
@@ -232,7 +237,21 @@ int main() {
 
   gettimeofday(&time1, NULL);
   raddress = 0xc0000000;
-  for(int i = 0; i < 128; i++){
+  actual_length = read_dev(1024-8, raddress, receive_data);
+  if(actual_length < 0) return -1;
+  for ( int j = 0; j < actual_length; j++ )
+    if(buf[j/8].c[j%8] != receive_data[j])
+      printf("error: %d, %d\n", 0, j);
+  //printf("len %d\n", actual_length);
+  /*for(int i = 0; i < 2; i++){
+      actual_length = read_dev(512-8, raddress, receive_data);
+      if(actual_length < 0) return -1;
+      for ( int j = 0; j < actual_length; j++ )
+        if(buf[i*64+j/8].c[j%8] != receive_data[j])
+          printf("error: %d, %d\n", i, j);
+      raddress += 512;
+    }
+  /*for(int i = 0; i < 128; i++){
     for(int ii = 0; ii < 1; ii++){
       actual_length = read_dev(6, raddress, receive_data);
       if(actual_length < 0) return -1;
@@ -241,7 +260,7 @@ int main() {
           printf("error: %d, %d\n", i, j);
       raddress += 8;
     }
-  }
+  }/**/
   gettimeofday(&time2, NULL);
   read_time = (time2.tv_sec - time1.tv_sec) * 1000 +  (float)(time2.tv_usec - time1.tv_usec) / 1000;
   printf("Recieve data: %5.2f ms\n", read_time);
@@ -282,7 +301,8 @@ int main() {
   actual_length = read_dev(1, 0x40600008, receive_data);
   while((receive_data[0]&0x1) == 1){
     actual_length = read_dev(1, raddress, receive_data);
-    if(receive_data[0] != 0x0d) printf("%c", receive_data[0]);
+    if(receive_data[0] == 0x0d) printf("\n");
+    else                        printf("%c", receive_data[0]);
     actual_length = read_dev(1, 0x40600008, receive_data);
   }
   printf("\n");

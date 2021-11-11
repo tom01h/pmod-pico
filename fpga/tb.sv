@@ -89,6 +89,7 @@ module tb ();
         repeat(10)@(posedge M_AXI_ACLK);
         pmod_enable = 1'b1;
         pwrite = 1'b0;
+        len=8;
         for(j=0; j<5; j++) begin
             @(posedge pck);
             pwd = len[2*j +: 2];
@@ -101,14 +102,16 @@ module tb ();
         wait(M_AXI_ARVALID);
         repeat(2) @(posedge M_AXI_ACLK);
         M_AXI_RVALID  = 1'b1;
-        M_AXI_RLAST   = 1'b1;
         M_AXI_RDATA   = 32'hdeadbeef;
+        @(posedge M_AXI_ACLK);
+        M_AXI_RLAST   = 1'b1;
+        M_AXI_RDATA   = 32'habad1dea;
         @(posedge M_AXI_ACLK);
         M_AXI_RVALID  = 1'b0;
         M_AXI_RLAST   = 1'b0;
 
         wait(~pwait);
-        repeat(16) @(posedge pck);
+        repeat(4*16) @(posedge pck);
 
         pwrite = 1'b1;
         len=8;
@@ -141,7 +144,7 @@ module tb ();
                 @(posedge pck);
                 pwd = wdata[2*j +: 2];
             end
-            for(j=0; j<12+16; j++) begin
+            for(j=0; j<64-4; j++) begin
             //for(j=0; j<12; j++) begin
             //for(j=0; j<4; j++) begin
                 @(posedge pck);
