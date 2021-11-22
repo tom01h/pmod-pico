@@ -166,11 +166,11 @@ int main() {
   int actual_length = 0;
   int raddress = 0x40000000;
 
-  actual_length = read_dev(1, raddress, receive_data);
+  /*actual_length = read_dev(1, raddress, receive_data);
   printf("Receive : %d Bytes\n", actual_length);
   for ( int i = 0; i < actual_length; i++ )
     printf("%02X ", receive_data[i]);
-  printf("\n");
+  printf("\n");*/
 
   srand((unsigned) time(NULL));
   union u_data_t buf[128];
@@ -221,7 +221,7 @@ int main() {
   raddress = 0xc0000000;
   for(int i = 0; i < 4; i++){
     for(int ii = 0; ii < 1; ii++){
-      actual_length = read_dev(32-8, raddress, receive_data);
+      actual_length = read_dev(6, raddress, receive_data);
       printf("length %d\n", actual_length);
       if(actual_length < 0) return -1;
       printf("%d, ", i);
