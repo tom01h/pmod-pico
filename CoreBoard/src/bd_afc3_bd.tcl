@@ -136,7 +136,6 @@ xilinx.com:ip:smartconnect:1.0\
 xilinx.com:ip:axi_uartlite:2.0\
 xilinx.com:ip:clk_wiz:6.0\
 xilinx.com:ip:proc_sys_reset:5.0\
-xilinx.com:ip:util_vector_logic:2.0\
 "
 
    set list_ips_missing ""
@@ -266,6 +265,10 @@ proc create_root_design { parentCell } {
 
   # Create instance: clk_wiz, and set properties
   set clk_wiz [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz:6.0 clk_wiz ]
+  set_property -dict [ list \
+   CONFIG.RESET_PORT {resetn} \
+   CONFIG.RESET_TYPE {ACTIVE_LOW} \
+ ] $clk_wiz
 
   # Create instance: pmodIf_0, and set properties
   set block_name pmodIf
@@ -280,14 +283,6 @@ proc create_root_design { parentCell } {
   
   # Create instance: rst_clk_wiz_100M, and set properties
   set rst_clk_wiz_100M [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_clk_wiz_100M ]
-
-  # Create instance: util_vector_logic_0, and set properties
-  set util_vector_logic_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:util_vector_logic:2.0 util_vector_logic_0 ]
-  set_property -dict [ list \
-   CONFIG.C_OPERATION {not} \
-   CONFIG.C_SIZE {1} \
-   CONFIG.LOGO_FILE {data/sym_notgate.png} \
- ] $util_vector_logic_0
 
   # Create interface connections
   connect_bd_intf_net -intf_net axi_bram_ctrl_0_BRAM_PORTA [get_bd_intf_pins axi_bram_ctrl_0/BRAM_PORTA] [get_bd_intf_pins axi_bram_ctrl_0_bram/BRAM_PORTA]
@@ -307,8 +302,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net pmodIf_0_prd [get_bd_ports PRD] [get_bd_pins pmodIf_0/prd]
   connect_bd_net -net pmodIf_0_pwait [get_bd_ports PWAIT] [get_bd_pins pmodIf_0/pwait]
   connect_bd_net -net rst_clk_wiz_100M_peripheral_aresetn [get_bd_pins axi_bram_ctrl_0/s_axi_aresetn] [get_bd_pins axi_smc/aresetn] [get_bd_pins axi_uartlite_0/s_axi_aresetn] [get_bd_pins pmodIf_0/M_AXI_ARESETN] [get_bd_pins rst_clk_wiz_100M/peripheral_aresetn]
-  connect_bd_net -net sys_rst_n_1 [get_bd_ports sys_rst_n] [get_bd_pins rst_clk_wiz_100M/ext_reset_in] [get_bd_pins util_vector_logic_0/Op1]
-  connect_bd_net -net util_vector_logic_0_Res [get_bd_pins clk_wiz/reset] [get_bd_pins util_vector_logic_0/Res]
+  connect_bd_net -net sys_rst_n_1 [get_bd_ports sys_rst_n] [get_bd_pins clk_wiz/resetn] [get_bd_pins rst_clk_wiz_100M/ext_reset_in]
 
   # Create address segments
   assign_bd_address -offset 0xC0000000 -range 0x00002000 -target_address_space [get_bd_addr_spaces pmodIf_0/M_AXI] [get_bd_addr_segs axi_bram_ctrl_0/S_AXI/Mem0] -force

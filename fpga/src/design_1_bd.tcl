@@ -225,6 +225,8 @@ proc create_root_design { parentCell } {
 
 
   # Create interface ports
+  set usb_uart [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:uart_rtl:1.0 usb_uart ]
+
 
   # Create ports
   set PCK [ create_bd_port -dir I PCK ]
@@ -232,9 +234,7 @@ proc create_root_design { parentCell } {
   set PWAIT [ create_bd_port -dir O PWAIT ]
   set PWD [ create_bd_port -dir I -from 1 -to 0 PWD ]
   set PWRITE [ create_bd_port -dir I PWRITE ]
-  set RXD [ create_bd_port -dir I RXD ]
   set SW [ create_bd_port -dir I -from 3 -to 0 SW ]
-  set TXD [ create_bd_port -dir O TXD ]
   set reset [ create_bd_port -dir I -type rst reset ]
   set_property -dict [ list \
    CONFIG.POLARITY {ACTIVE_LOW} \
@@ -268,7 +268,7 @@ proc create_root_design { parentCell } {
   set axi_uartlite_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_uartlite:2.0 axi_uartlite_0 ]
   set_property -dict [ list \
    CONFIG.C_BAUDRATE {115200} \
-   CONFIG.UARTLITE_BOARD_INTERFACE {Custom} \
+   CONFIG.UARTLITE_BOARD_INTERFACE {usb_uart} \
    CONFIG.USE_BOARD_FLOW {true} \
  ] $axi_uartlite_0
 
@@ -309,6 +309,7 @@ proc create_root_design { parentCell } {
 
   # Create interface connections
   connect_bd_intf_net -intf_net axi_bram_ctrl_0_BRAM_PORTA [get_bd_intf_pins axi_bram_ctrl_0/BRAM_PORTA] [get_bd_intf_pins axi_bram_ctrl_0_bram/BRAM_PORTA]
+  connect_bd_intf_net -intf_net axi_uartlite_0_UART [get_bd_intf_ports usb_uart] [get_bd_intf_pins axi_uartlite_0/UART]
   connect_bd_intf_net -intf_net pmodIf_0_M_AXI [get_bd_intf_pins pmodIf_0/M_AXI] [get_bd_intf_pins pmodIf_0_axi_periph/S00_AXI]
   connect_bd_intf_net -intf_net pmodIf_0_axi_periph_M00_AXI [get_bd_intf_pins axi_uartlite_0/S_AXI] [get_bd_intf_pins pmodIf_0_axi_periph/M00_AXI]
   connect_bd_intf_net -intf_net pmodIf_0_axi_periph_M01_AXI [get_bd_intf_pins axi_gpio_0/S_AXI] [get_bd_intf_pins pmodIf_0_axi_periph/M01_AXI]
@@ -318,9 +319,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net PCK_1 [get_bd_ports PCK] [get_bd_pins pmodIf_0/pck]
   connect_bd_net -net PWD_1 [get_bd_ports PWD] [get_bd_pins pmodIf_0/pwd]
   connect_bd_net -net PWRITE_1 [get_bd_ports PWRITE] [get_bd_pins pmodIf_0/pwrite]
-  connect_bd_net -net RXD_1 [get_bd_ports RXD] [get_bd_pins axi_uartlite_0/rx]
   connect_bd_net -net SW_1 [get_bd_ports SW] [get_bd_pins axi_gpio_0/gpio_io_i]
-  connect_bd_net -net axi_uartlite_0_tx [get_bd_ports TXD] [get_bd_pins axi_uartlite_0/tx]
   connect_bd_net -net clk_wiz_clk_out1 [get_bd_pins axi_bram_ctrl_0/s_axi_aclk] [get_bd_pins axi_gpio_0/s_axi_aclk] [get_bd_pins axi_uartlite_0/s_axi_aclk] [get_bd_pins clk_wiz/clk_out1] [get_bd_pins pmodIf_0/M_AXI_ACLK] [get_bd_pins pmodIf_0_axi_periph/ACLK] [get_bd_pins pmodIf_0_axi_periph/M00_ACLK] [get_bd_pins pmodIf_0_axi_periph/M01_ACLK] [get_bd_pins pmodIf_0_axi_periph/M02_ACLK] [get_bd_pins pmodIf_0_axi_periph/S00_ACLK] [get_bd_pins rst_clk_wiz_100M/slowest_sync_clk]
   connect_bd_net -net clk_wiz_locked [get_bd_pins clk_wiz/locked] [get_bd_pins rst_clk_wiz_100M/dcm_locked]
   connect_bd_net -net pmodIf_0_prd [get_bd_ports PRD] [get_bd_pins pmodIf_0/prd]

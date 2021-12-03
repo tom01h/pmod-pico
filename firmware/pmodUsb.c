@@ -12,13 +12,14 @@
 #define UART_TX_PIN 0
 #define UART_RX_PIN 1
 
-#define PCK_PIN 6
-#define PWRITE_PIN 7
-#define PWD0_PIN 8
-#define PWD1_PIN 9
-#define PRD0_PIN 10
-#define PRD1_PIN 11
-#define PWAIT_PIN 4
+#define PWD0_PIN 2
+#define PWD1_PIN 3
+#define PRD0_PIN 4
+#define PRD1_PIN 5
+
+#define PCK_PIN 10
+#define PWRITE_PIN 11
+#define PWAIT_PIN 12
 
 typedef uint8_t cmd_buffer[64];
 // [0]     W/R#
@@ -110,7 +111,7 @@ void __time_critical_func(pread)(uint8_t *buffer, int size)
       j++;
       ci = gpio_get_all();
       if(!(ci & (1 << PWAIT_PIN))){
-        c |= (ci >> (PRD1_PIN - 7)) & 0xc0;
+        c |= (ci << (7 - PRD1_PIN)) & 0xc0;
       } else {
         c <<= 2;
         j--;
