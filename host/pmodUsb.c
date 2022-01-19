@@ -171,7 +171,7 @@ int main() {
   printf("Receive : %d Bytes\n", actual_length);
   for ( int i = 0; i < actual_length; i++ )
     printf("%02X ", receive_data[i]);
-  printf("\n");*/
+  printf("\n");/**/
 
   srand((unsigned) time(NULL));
   union u_data_t buf[128];
@@ -193,8 +193,10 @@ int main() {
     printf("%d, %llx\n", i, buf[i].l);
   }
 
+  int mem_address = 0x80000000;
+
   // データを 1KB 書き込む
-  int waddress = 0xc0000000;
+  int waddress = mem_address;
   gettimeofday(&time1, NULL);
   actual_length = write_dev(1024-8, waddress, send_data);
   //if(actual_length < 0) return -1;
@@ -222,7 +224,7 @@ int main() {
 
   // データを試し読みする
   printf("Recieve data\n");
-  raddress = 0xc0000000;
+  raddress = mem_address;
   for(int i = 0; i < 4; i++){
     for(int ii = 0; ii < 1; ii++){
       actual_length = read_dev(6, raddress, receive_data);
@@ -241,7 +243,7 @@ int main() {
 
   // データを 1KB  読み出す
   gettimeofday(&time1, NULL);
-  raddress = 0xc0000000;
+  raddress = mem_address;
   actual_length = read_dev(1024-8, raddress, receive_data);
   if(actual_length < 0) return -1;
   for ( int j = 0; j < actual_length; j++ )
