@@ -194,6 +194,7 @@ int main() {
   }
 
   int mem_address = 0x80000000;
+  //int mem_address = 0xc0000000;
 
   // データを 1KB 書き込む
   int waddress = mem_address;
