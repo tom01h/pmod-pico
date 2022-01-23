@@ -1,5 +1,7 @@
 # MIG を使うのが難しかったところ
 
+[MIG を使って DRAM メモリを動かそう (3) | ACRi Blog (titech.ac.jp)](https://www.acri.c.titech.ac.jp/wordpress/archives/7284) を参考にさせてもらいました
+
 ### 端子をケチっているのの対応
 
 何本かの端子が使われていない為の MIG の設定
